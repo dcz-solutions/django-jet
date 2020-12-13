@@ -1,63 +1,63 @@
-var $ = require('jquery');
+var $ = require("jquery");
 
-var ToolbarUpdater = function($changelist) {
+var ToolbarUpdater = function ($changelist) {
     this.$changelist = $changelist;
 };
 
 ToolbarUpdater.prototype = {
-    getToolbar: function($changelist) {
-        var $toolbar = $changelist.find('#toolbar');
+    getToolbar: function ($changelist) {
+        var $toolbar = $changelist.find("#toolbar");
 
         if ($toolbar.length == 0) {
-            $toolbar = $('<div>').attr('id', 'toolbar');
-            $('#changelist').prepend($toolbar);
+            $toolbar = $("<div>").attr("id", "toolbar");
+            $("#changelist").prepend($toolbar);
         }
 
         return $toolbar;
     },
-    updateToolbar: function($toolbar) {
-        var placeholder = $toolbar.find('input[type="submit"]').val();
-        $toolbar.find('#searchbar').attr('placeholder', placeholder);
+    updateToolbar: function ($toolbar) {
+        var placeholder = $toolbar.find("input[type=\"submit\"]").val();
+        $toolbar.find("#searchbar").attr("placeholder", placeholder);
     },
-    moveFilters: function($changelist, $toolbar) {
+    moveFilters: function ($changelist, $toolbar) {
         var filterName;
-        var $search = $toolbar.find('#searchbar');
+        var $search = $toolbar.find("#searchbar");
 
-        $changelist.find('#changelist-filter').children().each(function() {
+        $changelist.find("#changelist-filter").children().each(function () {
             var $element = $(this);
 
-            if ($element.prop('tagName') == 'H3') {
+            if ($element.prop("tagName") == "H3") {
                 filterName = $element.text();
-            } else if ($element.prop('tagName') == 'UL') {
-                var $select = $('<select>');
-                var $items = $element.find('li');
+            } else if ($element.prop("tagName") == "UL") {
+                var $select = $("<select>");
+                var $items = $element.find("li");
 
-                $.each($element.prop('attributes'), function() {
+                $.each($element.prop("attributes"), function () {
                     $select.attr(this.name, this.value);
                 });
 
-                $select.addClass('changelist-filter-select');
+                $select.addClass("changelist-filter-select");
 
-                if ($items.filter('.selected').length > 1) {
-                    $select.attr('multiple', true);
+                if ($items.filter(".selected").length > 1) {
+                    $select.attr("multiple", true);
                 }
 
-                $items.each(function(i) {
+                $items.each(function (i) {
                     var $item = $(this);
-                    var $link = $item.find('a');
-                    var $option = $('<option>')
+                    var $link = $item.find("a");
+                    var $option = $("<option>")
                         .text($link.text())
-                        .attr('data-url', $link.attr('href'))
-                        .attr('selected', $item.hasClass('selected'));
+                        .attr("data-url", $link.attr("href"))
+                        .attr("selected", $item.hasClass("selected"));
 
-                    if (i == 0 ) {
+                    if (i == 0) {
                         if (filterName != null) {
-                            $option.text(filterName)
+                            $option.text(filterName);
                         }
 
-                        var $separator = $('<option>')
-                            .attr('disabled', true)
-                            .text('---');
+                        var $separator = $("<option>")
+                            .attr("disabled", true)
+                            .text("---");
 
                         $option = $option.add($separator);
                     }
@@ -65,8 +65,8 @@ ToolbarUpdater.prototype = {
                     $select.append($option);
                 });
 
-                var $wrapper = $('<span>')
-                    .addClass('changelist-filter-select-wrapper')
+                var $wrapper = $("<span>")
+                    .addClass("changelist-filter-select-wrapper")
                     .append($select);
 
                 if ($search.length) {
@@ -76,11 +76,11 @@ ToolbarUpdater.prototype = {
                 }
 
                 filterName = null;
-            } else if ($element.hasClass('changelist-filter-popup')) {
-                var $toggle = $element.find('.changelist-filter-popup-toggle');
-                var $content = $element.find('.changelist-filter-popup-content');
-                var $wrapper = $('<span>')
-                    .addClass('changelist-filter-select-wrapper')
+            } else if ($element.hasClass("changelist-filter-popup")) {
+                var $toggle = $element.find(".changelist-filter-popup-toggle");
+                var $content = $element.find(".changelist-filter-popup-content");
+                var $wrapper = $("<span>")
+                    .addClass("changelist-filter-select-wrapper")
                     .append($element);
 
                 if ($search.length) {
@@ -89,44 +89,51 @@ ToolbarUpdater.prototype = {
                     $toolbar.append($wrapper);
                 }
 
-                $toggle.on('click', function(e) {
+                $toggle.on("click", function (e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    $content.toggleClass('visible');
+                    $content.toggleClass("visible");
                 });
 
-                $content.on('click', function(e) {
+                $content.on("click", function (e) {
                     e.stopPropagation();
                 });
 
-                $(document.body).on('click', function() {
-                    $content.removeClass('visible');
-                });
+                /* date rangefilter is closing itself, when clicking on the calendar-widget "next-month"
+                   $content.removeClass('visible');	                 * it is also closing itself when clicking somewhere at the page, althought there is a
+               });	                 * reset button in the popup which closes the popup.
+                *
+                * removing the on click to keep the visible class works fine - at least for the date
+                * rangefilter component
+                */
+                // $(document.body).on("click", function () {
+                //     $content.removeClass("visible");
+                // });
             }
         });
 
-        $changelist.find('#changelist-filter').remove();
+        $changelist.find("#changelist-filter").remove();
     },
-    fixFloatLineBreak: function() {
-        $('#content-main').each(function() {
+    fixFloatLineBreak: function () {
+        $("#content-main").each(function () {
             var $content = $(this);
 
-            $.each(['#toolbar', '.object-tools', 'changeform-navigation'], function(i, selector) {
+            $.each(["#toolbar", ".object-tools", "changeform-navigation"], function (i, selector) {
                 var $element = $content.find(selector).first();
 
                 if ($element.length == 0) {
                     return;
                 }
 
-                $('<div>')
-                    .addClass('clear')
+                $("<div>")
+                    .addClass("clear")
                     .insertAfter($element);
 
                 return false;
             });
         });
     },
-    run: function() {
+    run: function () {
         var $toolbar = this.getToolbar(this.$changelist);
 
         try {
@@ -142,12 +149,12 @@ ToolbarUpdater.prototype = {
             console.error(e, e.stack);
         }
 
-        $toolbar.addClass('initialized');
+        $toolbar.addClass("initialized");
     }
 };
 
-$(document).ready(function() {
-    $('#changelist').each(function() {
+$(document).ready(function () {
+    $("#changelist").each(function () {
         new ToolbarUpdater($(this)).run();
     });
 });

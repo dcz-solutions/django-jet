@@ -1,53 +1,45 @@
-from __future__ import unicode_literals
 import json
 import os
-from django import template
-try:
-    from django.core.urlresolvers import reverse
-except ImportError: # Django 1.11
-    from django.urls import reverse
+from urllib.parse import parse_qsl
 
+from django import template
 from django.forms import CheckboxInput, ModelChoiceField, Select, ModelMultipleChoiceField, SelectMultiple
 from django.contrib.admin.widgets import RelatedFieldWidgetWrapper
+from django.template.defaulttags import NowNode
+from django.urls import reverse
 from django.utils.formats import get_format
 from django.utils.safestring import mark_safe
 from django.utils.encoding import smart_text
+
 from jet import settings, VERSION
 from jet.models import Bookmark
 from jet.utils import get_model_instance_label, get_model_queryset, get_possible_language_codes, \
     get_admin_site, get_menu_items
 
-try:
-    from urllib.parse import parse_qsl
-except ImportError:
-    from urlparse import parse_qsl
-
-
 register = template.Library()
-assignment_tag = register.assignment_tag if hasattr(register, 'assignment_tag') else register.simple_tag
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_date_format():
     return get_format('DATE_INPUT_FORMATS')[0]
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_time_format():
     return get_format('TIME_INPUT_FORMATS')[0]
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_datetime_format():
     return get_format('DATETIME_INPUT_FORMATS')[0]
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_get_menu(context):
     return get_menu_items(context)
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_bookmarks(user):
     if user is None:
         return None
@@ -85,7 +77,7 @@ def jet_select2_lookups(field):
                     initial_objects = model.objects.filter(pk__in=initial_value)
                     choices.extend(
                         [(initial_object.pk, get_model_instance_label(initial_object))
-                            for initial_object in initial_objects]
+                         for initial_object in initial_objects]
                     )
 
                 if isinstance(field.field.widget, RelatedFieldWidgetWrapper):
@@ -96,7 +88,10 @@ def jet_select2_lookups(field):
             elif hasattr(field, 'field') and isinstance(field.field, ModelChoiceField):
                 if initial_value:
                     try:
-                        initial_object = model.objects.get(pk=initial_value)
+                        if hasattr(field.form, 'instance'):
+                            initial_object = getattr(field.form.instance, field.name)
+                        else:
+                            initial_object = model.objects.get(pk=initial_value)
                         attrs['data-object-id'] = initial_value
                         choices.append((initial_object.pk, get_model_instance_label(initial_object)))
                     except model.DoesNotExist:
@@ -111,7 +106,7 @@ def jet_select2_lookups(field):
     return field
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_get_current_theme(context):
     if 'request' in context and 'JET_THEME' in context['request'].COOKIES:
         theme = context['request'].COOKIES['JET_THEME']
@@ -122,12 +117,12 @@ def jet_get_current_theme(context):
     return settings.JET_DEFAULT_THEME
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_themes():
     return settings.JET_THEMES
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_current_version():
     return VERSION
 
@@ -140,12 +135,12 @@ def jet_append_version(url):
         return '%s?v=%s' % (url, VERSION)
 
 
-@assignment_tag
+@register.simple_tag
 def jet_get_side_menu_compact():
     return settings.JET_SIDE_MENU_COMPACT
 
 
-@assignment_tag
+@register.simple_tag
 def jet_change_form_sibling_links_enabled():
     return settings.JET_CHANGE_FORM_SIBLING_LINKS
 
@@ -199,17 +194,17 @@ def jet_sibling_object(context, next):
     }
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_previous_object(context):
     return jet_sibling_object(context, False)
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_next_object(context):
     return jet_sibling_object(context, True)
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_popup_response_data(context):
     if context.get('popup_response_data'):
         return context['popup_response_data']
@@ -222,14 +217,14 @@ def jet_popup_response_data(context):
     })
 
 
-@assignment_tag(takes_context=True)
+@register.simple_tag(takes_context=True)
 def jet_delete_confirmation_context(context):
     if context.get('deletable_objects') is None and context.get('deleted_objects') is None:
         return ''
     return mark_safe('<div class="delete-confirmation-marker"></div>')
 
 
-@assignment_tag
+@register.simple_tag
 def jet_static_translation_urls():
     language_codes = get_possible_language_codes()
 
@@ -252,3 +247,24 @@ def jet_static_translation_urls():
                 break
 
     return urls
+
+
+@register.simple_tag(takes_context=True)
+def jet_render_sidebar(context):
+    from jet.sidebar import Sidebar
+    return Sidebar(context.get('request'), context).render()
+
+
+@register.simple_tag
+def jet_date():
+    return NowNode(settings.JET_HEADER_DATE_FORMAT)
+
+
+@register.simple_tag
+def jet_time():
+    return NowNode(settings.JET_HEADER_TIME_FORMAT)
+
+
+@register.simple_tag
+def get_current_jet_version():
+    return VERSION

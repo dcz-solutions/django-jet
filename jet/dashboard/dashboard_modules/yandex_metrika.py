@@ -1,10 +1,12 @@
 # encoding: utf-8
 import datetime
 import json
+
 from django import forms
+
 try:
     from django.core.urlresolvers import reverse
-except ImportError: # Django 1.11
+except ImportError:  # Django 1.11
     from django.urls import reverse
 
 from django.forms import Widget
@@ -13,7 +15,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from jet.dashboard.modules import DashboardModule
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.utils.encoding import force_text
 
@@ -100,7 +102,7 @@ class YandexMetrikaClient:
 class AccessTokenWidget(Widget):
     module = None
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         if value and len(value) > 0:
             link = '<a href="%s">%s</a>' % (
                 reverse('jet-dashboard:yandex-metrika-revoke', kwargs={'pk': self.module.model.pk}),
@@ -139,7 +141,8 @@ class YandexMetrikaSettingsForm(forms.Form):
             self.fields['counter'].choices = (('', '-- %s --' % force_text(_('none'))),)
             self.fields['counter'].choices.extend(map(lambda x: (x['id'], x['site']), counters))
         else:
-            label = force_text(_('grant access first')) if module.access_token is None else force_text(_('counters loading failed'))
+            label = force_text(_('grant access first')) if module.access_token is None else force_text(
+                _('counters loading failed'))
             self.fields['counter'].choices = (('', '-- %s -- ' % label),)
 
 
@@ -220,10 +223,14 @@ class YandexMetrikaBase(DashboardModule):
 
     def counter_attached(self):
         if self.access_token is None:
-            self.error = mark_safe(_('Please <a href="%s">attach Yandex account and choose Yandex Metrika counter</a> to start using widget') % reverse('jet-dashboard:update_module', kwargs={'pk': self.model.pk}))
+            self.error = mark_safe(_(
+                'Please <a href="%s">attach Yandex account and choose Yandex Metrika counter</a> to start using widget') % reverse(
+                'jet-dashboard:update_module', kwargs={'pk': self.model.pk}))
             return False
         elif self.counter is None:
-            self.error = mark_safe(_('Please <a href="%s">select Yandex Metrika counter</a> to start using widget') % reverse('jet-dashboard:update_module', kwargs={'pk': self.model.pk}))
+            self.error = mark_safe(
+                _('Please <a href="%s">select Yandex Metrika counter</a> to start using widget') % reverse(
+                    'jet-dashboard:update_module', kwargs={'pk': self.model.pk}))
             return False
         else:
             return True
@@ -239,7 +246,8 @@ class YandexMetrikaBase(DashboardModule):
             if exception is not None:
                 error = _('API request failed.')
                 if isinstance(exception, HTTPError) and exception.code == 403:
-                    error += _(' Try to <a href="%s">revoke and grant access</a> again') % reverse('jet-dashboard:update_module', kwargs={'pk': self.model.pk})
+                    error += _(' Try to <a href="%s">revoke and grant access</a> again') % reverse(
+                        'jet-dashboard:update_module', kwargs={'pk': self.model.pk})
                 self.error = mark_safe(error)
             else:
                 return result

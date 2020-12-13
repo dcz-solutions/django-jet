@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.admin.models import LogEntry
 from django.db.models import Q
 from django.template.loader import render_to_string
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from jet.utils import get_app_list, LazyDateTimeEncoder, context_to_dict
 import datetime
 
@@ -60,6 +60,10 @@ class DashboardModule(object):
     #: A boolean field which specify if widget should be rendered on dashboard page load or fetched
     #: later via AJAX.
     ajax_load = False
+
+    #: A int field which specify if the widget needs to be updated, every X ms. Works only if ajax_load is at True
+    #: default: 0, no update
+    ajax_autoreload_time = 0
 
     #: A boolean field which makes widget ui color contrast.
     contrast = False
@@ -177,7 +181,7 @@ class LinkList(DashboardModule):
 
     .. code-block:: python
 
-        from django.utils.translation import ugettext_lazy as _
+        from django.utils.translation import gettext_lazy as _
         from jet.dashboard import modules
         from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 
@@ -278,7 +282,7 @@ class AppList(DashboardModule):
 
     .. code-block:: python
 
-        from django.utils.translation import ugettext_lazy as _
+        from django.utils.translation import gettext_lazy as _
         from jet.dashboard import modules
         from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 
@@ -351,7 +355,7 @@ class ModelList(DashboardModule):
 
     .. code-block:: python
 
-        from django.utils.translation import ugettext_lazy as _
+        from django.utils.translation import gettext_lazy as _
         from jet.dashboard import modules
         from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 
@@ -425,7 +429,7 @@ class RecentActions(DashboardModule):
 
     .. code-block:: python
 
-        from django.utils.translation import ugettext_lazy as _
+        from django.utils.translation import gettext_lazy as _
         from jet.dashboard import modules
         from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 
@@ -533,7 +537,7 @@ class Feed(DashboardModule):
 
     .. code-block:: python
 
-        from django.utils.translation import ugettext_lazy as _
+        from django.utils.translation import gettext_lazy as _
         from jet.dashboard import modules
         from jet.dashboard.dashboard import Dashboard, AppIndexDashboard
 

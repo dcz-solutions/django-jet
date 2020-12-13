@@ -1,24 +1,13 @@
 import datetime
 import json
+from collections import OrderedDict
+
 from django.template import Context
 from django.utils import translation
-from jet import settings
-from jet.models import PinnedApplication
-
-try:
-    from django.apps.registry import apps
-except ImportError:
-    try:
-        from django.apps import apps # Fix Django 1.7 import issue
-    except ImportError:
-        pass
+from django.apps.registry import apps
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpResponse
-try:
-    from django.core.urlresolvers import reverse, resolve, NoReverseMatch
-except ImportError: # Django 1.11
-    from django.urls import reverse, resolve, NoReverseMatch
-
+from django.urls import reverse, resolve, NoReverseMatch
 from django.contrib.admin import AdminSite
 from django.utils.encoding import smart_text
 from django.utils.text import capfirst
@@ -27,13 +16,11 @@ from django.utils.encoding import force_text
 from django.utils.functional import Promise
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib import admin
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # Python 2.6
+from jet import settings
+from jet.models import PinnedApplication
 
 
 class JsonResponse(HttpResponse):
@@ -51,7 +38,7 @@ class JsonResponse(HttpResponse):
     def __init__(self, data, encoder=DjangoJSONEncoder, safe=True, **kwargs):
         if safe and not isinstance(data, dict):
             raise TypeError('In order to allow non-dict objects to be '
-                'serialized set the safe parameter to False')
+                            'serialized set the safe parameter to False')
         kwargs.setdefault('content_type', 'application/json')
         data = json.dumps(data, cls=encoder)
         super(JsonResponse, self).__init__(content=data, **kwargs)
@@ -67,7 +54,7 @@ def get_app_list(context, order=True):
         try:
             has_module_perms = model_admin.has_module_permission(request)
         except AttributeError:
-            has_module_perms = request.user.has_module_perms(app_label) # Fix Django < 1.8 issue
+            has_module_perms = request.user.has_module_perms(app_label)  # Fix Django < 1.8 issue
 
         if has_module_perms:
             perms = model_admin.get_model_perms(request)
@@ -82,7 +69,7 @@ def get_app_list(context, order=True):
                     'perms': perms,
                     'model_name': model._meta.model_name
                 }
-                if perms.get('change', False):
+                if perms.get('change', False) or perms.get('view', False):
                     try:
                         model_dict['admin_url'] = reverse('admin:%s_%s_changelist' % info, current_app=admin_site.name)
                     except NoReverseMatch:
@@ -223,7 +210,8 @@ def get_model_queryset(admin_site, model, request, preserved_filters=None):
         request, model, list_display, list_display_links, list_filter,
         model_admin.date_hierarchy, search_fields, list_select_related,
         model_admin.list_per_page, model_admin.list_max_show_all,
-        model_admin.list_editable, model_admin]
+        model_admin.list_editable, model_admin, model_admin.sortable_by
+    ]
 
     try:
         sortable_by = model_admin.get_sortable_by(request)
@@ -429,6 +417,7 @@ def get_menu_items(context):
         def map_item(item):
             item['items'] = item['models']
             return item
+
         app_list = list(map(map_item, original_app_list.values()))
 
     current_found = False
@@ -462,7 +451,4 @@ def context_to_dict(context):
 
 
 def user_is_authenticated(user):
-    if not hasattr(user.is_authenticated, '__call__'):
-        return user.is_authenticated
-    else:
-        return user.is_authenticated()
+    return user.is_authenticated
